@@ -53,7 +53,7 @@ html, body {
 .screen.hidden  { display: none; }
 .screen.active  { display: flex; }
 
-/* ===== TÕTULOS NE”N ===== */
+/* ===== T√çTULOS NE√ìN ===== */
 .game-title {
   font-family: 'Orbitron', sans-serif;
   font-size: clamp(2.4rem, 8vw, 5.5rem);
