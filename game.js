@@ -29,8 +29,8 @@ const BALANCE = {
   WAVE_SPAWN_RATE: 1.2,
   WAVE_SPAWN_DEC: 0.04,
   WAVE_MIN_SPAWN: 0.3,
-  WAVE_ANNOUNCE_TIME: 2200,  // ms
-  INTER_WAVE_PAUSE: 600,   // ms
+  WAVE_ANNOUNCE_TIME: 900,   // ms
+  INTER_WAVE_PAUSE: 200,     // ms
   // Tienda
   SHOP_DAMAGE_COST: 30,
   SHOP_FIRERATE_COST: 35,
@@ -221,22 +221,57 @@ const POWERUP_CFG = {
 class PowerUp {
   constructor(x, y, type) {
     this.x = x; this.y = y; this.type = type;
-    this.radius = 13; this.life = 10; this.t = 0; this.dead = false;
+    // Mismo radio que el enemigo normal (14)
+    this.radius = 14; this.life = 10; this.t = 0; this.dead = false;
   }
   update(dt) { this.t += dt; this.life -= dt; if (this.life <= 0) this.dead = true; }
   draw(ctx) {
     const bob = Math.sin(this.t * 3) * 3;
     const c = POWERUP_CFG[this.type].color;
-    const ic = POWERUP_CFG[this.type].icon;
-    ctx.save();
-    ctx.shadowBlur = 16; ctx.shadowColor = c;
-    ctx.fillStyle = c + '33'; ctx.strokeStyle = c; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(this.x, this.y + bob, this.radius, 0, Math.PI * 2);
-    ctx.fill(); ctx.stroke();
-    ctx.shadowBlur = 0;
-    ctx.font = '13px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(ic, this.x, this.y + bob);
-    ctx.restore();
+    const py = this.y + bob;
+    const r = this.radius;
+    const img = G.powerupImgs && G.powerupImgs[this.type];
+
+    if (img && img.complete && img.naturalWidth > 0) {
+      ctx.save();
+      // Clip circular para que la imagen quede perfecta y centrada
+      ctx.beginPath();
+      ctx.arc(this.x, py, r, 0, Math.PI * 2);
+      ctx.clip();
+
+      const d = r * 2;
+      ctx.drawImage(img, this.x - r, py - r, d, d);
+      ctx.restore();
+
+      // Borde circular brillante con glow
+      ctx.save();
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = c;
+      ctx.strokeStyle = c;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(this.x, py, r + 1, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Halo pulsante exterior
+      ctx.globalAlpha = 0.4 + 0.3 * Math.sin(this.t * 4);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(this.x, py, r + 5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      const ic = POWERUP_CFG[this.type].icon;
+      ctx.save();
+      ctx.shadowBlur = 16; ctx.shadowColor = c;
+      ctx.fillStyle = c + '33'; ctx.strokeStyle = c; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(this.x, py, this.radius, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.font = '13px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(ic, this.x, py);
+      ctx.restore();
+    }
   }
 }
 
@@ -284,35 +319,60 @@ class Enemy {
   }
   draw(ctx) {
     const r = this.radius;
-    const fill = this.flashTimer > 0 ? '#ffffff' : this.color;
+    const img = G.enemyImgs[this.type];
     ctx.save();
-    ctx.shadowBlur = 18; ctx.shadowColor = this.glow;
-    ctx.fillStyle = fill;
-    switch (this.shape) {
-      case 'circle':
-        ctx.beginPath(); ctx.arc(this.x, this.y, r, 0, Math.PI * 2); ctx.fill(); break;
-      case 'diamond':
-        ctx.beginPath();
-        ctx.moveTo(this.x, this.y - r); ctx.lineTo(this.x + r * 0.7, this.y);
-        ctx.lineTo(this.x, this.y + r); ctx.lineTo(this.x - r * 0.7, this.y);
-        ctx.closePath(); ctx.fill(); break;
-      case 'hex':
-        ctx.beginPath();
-        for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; ctx.lineTo(this.x + Math.cos(a) * r, this.y + Math.sin(a) * r); }
-        ctx.closePath(); ctx.fill(); break;
-      case 'star':
-        ctx.beginPath();
-        for (let i = 0; i < 10; i++) {
-          const a = i / 10 * Math.PI * 2 + this.wob * 0.2;
-          const rr = i % 2 === 0 ? r : r * 0.5;
-          ctx.lineTo(this.x + Math.cos(a) * rr, this.y + Math.sin(a) * rr);
-        }
-        ctx.closePath(); ctx.fill();
-        // anillo extra boss
-        ctx.strokeStyle = fill; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(this.x, this.y, r + 8, 0, Math.PI * 2); ctx.stroke();
-        break;
+
+    if (img && img.complete && img.naturalWidth > 0) {
+      // --- Clip circular ---
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+      ctx.clip();
+
+      // Glow exterior
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = this.glow;
+
+      // Rotación suave hacia la torre (wob usado como ángulo incremental suave)
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.wob * 0.15);
+
+      // Dibujar imagen cuadrada centrada, escalada al diámetro
+      const d = r * 2;
+      ctx.drawImage(img, -r, -r, d, d);
+
+      // Flash blanco al recibir daño: overlay semitransparente
+      if (this.flashTimer > 0) {
+        ctx.globalAlpha = 0.65;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(-r, -r, d, d);
+        ctx.globalAlpha = 1;
+      }
+
+      ctx.restore();
+      ctx.save();
+
+      // Anillo de glow alrededor del sprite
+      ctx.shadowBlur = 18; ctx.shadowColor = this.glow;
+      ctx.strokeStyle = this.flashTimer > 0 ? '#ffffff' : this.glow;
+      ctx.lineWidth = this.type === 'boss' ? 3 : 2;
+      ctx.beginPath(); ctx.arc(this.x, this.y, r + 1, 0, Math.PI * 2); ctx.stroke();
+
+      // Anillo extra pulsante para el jefe
+      if (this.type === 'boss') {
+        ctx.globalAlpha = 0.5 + 0.5 * Math.sin(this.wob * 2);
+        ctx.strokeStyle = this.glow;
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(this.x, this.y, r + 10, 0, Math.PI * 2); ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+    } else {
+      // Fallback geométrico si la imagen no cargó
+      ctx.shadowBlur = 18; ctx.shadowColor = this.glow;
+      ctx.fillStyle = this.flashTimer > 0 ? '#ffffff' : this.color;
+      ctx.beginPath(); ctx.arc(this.x, this.y, r, 0, Math.PI * 2); ctx.fill();
     }
+
     // Barra de vida
     const bw = r * 2.2, bh = 4, bx = this.x - bw / 2, by = this.y - r - 10;
     const pct = this.hp / this.maxHp;
@@ -568,7 +628,7 @@ class Player {
     if (this.shieldTimer > 0) { this.shieldTimer -= dt; if (this.shieldTimer <= 0) this.hasShield = false; }
     if (this.flashTimer > 0) this.flashTimer -= dt;
     this.fireTimer -= dt;
-    if (keys['mouse'] && this.fireTimer <= 0) {
+    if ((keys['mouse'] || keys[' ']) && this.fireTimer <= 0) {
       this.fireTimer = this.fireRate;
       this._fire(bullets); audio.shoot();
       this.flashTimer = 0.05;
@@ -706,12 +766,13 @@ class WaveManager {
     this.spawnTimer = 0;
   }
   _build(wave) {
-    const boss = wave % 5 === 0;
+    // El boss siempre aparece al FINAL de cada oleada
     const count = BALANCE.WAVE_BASE_COUNT + (wave - 1) * BALANCE.WAVE_COUNT_INC;
     const q = [];
-    if (boss) q.push({ type: 'boss', wave });
-    const n = boss ? Math.floor(count * 0.5) : count;
-    for (let i = 0; i < n; i++) q.push({ type: this._rnd(wave), wave });
+    // Primero spawneamos los enemigos normales/rápidos/tanques
+    for (let i = 0; i < count; i++) q.push({ type: this._rnd(wave), wave });
+    // El boss siempre al final, como jefe de ronda
+    q.push({ type: 'boss', wave });
     return q;
   }
   _rnd(wave) {
@@ -799,6 +860,9 @@ const G = {
   stars: [],
   lastTime: 0, animId: null,
   towerImg: null,        // imagen del escudo (torre.png)
+  bgImg: null,           // imagen de fondo (boca.jpg)
+  enemyImgs: {},         // sprites de enemigos por tipo
+  powerupImgs: {},       // sprites de power-ups por tipo
   daleBocaTimer: 0,      // contador para la celebración entre oleadas
   daleBocaParticles: []  // partículas de confetti Boca
 };
@@ -818,6 +882,36 @@ window.addEventListener('resize', resizeCanvas);
   const img = new Image();
   img.src = 'img/torre.png';
   img.onload = () => { G.towerImg = img; };
+})();
+
+// Precarga la imagen de fondo
+(function loadBgImage() {
+  const img = new Image();
+  img.src = 'img/boca.jpg';
+  img.onload = () => { G.bgImg = img; };
+})();
+
+// Precarga los sprites de enemigos
+(function loadEnemyImages() {
+  const srcs = {
+    normal: 'img/river.png',
+    fast: 'img/racing.webp',
+    tank: 'img/independiente.webp',
+    boss: 'img/chiqui.jfif'
+  };
+  for (const [type, src] of Object.entries(srcs)) {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => { G.enemyImgs[type] = img; };
+  }
+})();
+
+// Precarga los sprites de power-ups
+(function loadPowerupImages() {
+  const img = new Image();
+  img.src = 'img/speed.png';
+  img.onerror = () => { img.src = 'img/speed.jfif'; };
+  img.onload = () => { G.powerupImgs.triple = img; };
 })();
 
 function initStars() {
@@ -945,6 +1039,7 @@ function update(dt) {
       if (dist2(b.x, b.y, e.x, e.y) < (b.radius + e.radius) ** 2) {
         b.dead = true; G.audio.impact();
         const killed = e.takeDamage(b.damage);
+        pushText(e.x, e.y - e.radius - 8, `-${Math.round(b.damage)}`, '#ffffff');
         if (killed) onEnemyKill(e);
         else spawnParticles(e.x, e.y, e.color, 3);
         break;
@@ -967,6 +1062,23 @@ function update(dt) {
       }
     }
   });
+
+  // Separación suave entre enemigos vivos (flocking)
+  const living = G.enemies.filter(e => !e.dead);
+  for (let i = 0; i < living.length; i++) {
+    for (let j = i + 1; j < living.length; j++) {
+      const a = living[i], b = living[j];
+      const minDist = (a.radius + b.radius) * 0.8;
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const d = Math.sqrt(dx * dx + dy * dy) || 0.001;
+      if (d < minDist) {
+        const overlap = (minDist - d) / d;
+        const force = overlap * 60 * dt;
+        a.x += dx * force; a.y += dy * force;
+        b.x -= dx * force; b.y -= dy * force;
+      }
+    }
+  }
 
   // Power-ups
   G.powerups = G.powerups.filter(pu => {
@@ -1055,7 +1167,7 @@ function gameOver() {
 // ============================================================
 // SECCIÓN 18b: CELEBRACIÓN "DALE BOOOOO"
 // ============================================================
-const DALE_DURATION = 2.8; // segundos que dura la celebración
+const DALE_DURATION = 1.4; // segundos que dura la celebración
 
 function startDaleBoca() {
   G.state = 'dale-boca';
@@ -1101,10 +1213,10 @@ function updateDaleBoca(dt) {
     p.rot += p.rotSpeed * dt;
     return p.life > 0;
   });
-  // Terminar celebración y abrir tienda
+  // Terminar celebración y arrancar la siguiente oleada automáticamente
   if (G.daleBocaTimer >= DALE_DURATION) {
     G.daleBocaParticles = [];
-    openShop();
+    launchWave();
   }
 }
 
@@ -1207,11 +1319,30 @@ function draw() {
   ctx.save();
   ctx.translate(G.shakeX, G.shakeY);
 
-  // Fondo
-  ctx.fillStyle = '#07070f';
+  // Fondo: imagen boca.jpg + overlay oscuro para legibilidad
+  if (G.bgImg && G.bgImg.complete && G.bgImg.naturalWidth > 0) {
+    ctx.save();
+    // Escalar la imagen para cubrir toda la pantalla (cover)
+    const iw = G.bgImg.naturalWidth, ih = G.bgImg.naturalHeight;
+    const scale = Math.max((canvas.width + 40) / iw, (canvas.height + 40) / ih);
+    const sw = iw * scale, sh = ih * scale;
+    const sx = -20 + (canvas.width + 40 - sw) / 2;
+    const sy = -20 + (canvas.height + 40 - sh) / 2;
+    ctx.globalAlpha = 0.55;  // imagen al 55% para que se vea pero no distraiga
+    ctx.drawImage(G.bgImg, sx, sy, sw, sh);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  } else {
+    // Fallback color sólido si la imagen no cargó
+    ctx.fillStyle = '#07070f';
+    ctx.fillRect(-20, -20, canvas.width + 40, canvas.height + 40);
+  }
+
+  // Overlay oscuro para desaturar el fondo y asegurar legibilidad de enemigos
+  ctx.fillStyle = 'rgba(0, 0, 15, 0.60)';
   ctx.fillRect(-20, -20, canvas.width + 40, canvas.height + 40);
 
-  // Grid sutil
+  // Grid sutil encima del fondo
   ctx.strokeStyle = 'rgba(0,180,255,0.04)'; ctx.lineWidth = 1;
   for (let x = 0; x < canvas.width; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
   for (let y = 0; y < canvas.height; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }

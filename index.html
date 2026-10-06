@@ -15,15 +15,15 @@
       <p class="subtitle">Defendé la torre. Dale Boca Dale.</p>
     </div>
     <div class="controls-hint">
-      <span>WASD / ???? Mover</span>
-      <span>?? Apuntar</span>
-      <span>??? Clic Disparar</span>
+      <span>WASD / 🕹️ Mover</span>
+      <span>🖱️ Apuntar</span>
+      <span>🖱️ Clic Disparar</span>
       <span>P / Esc Pausa</span>
       <span>Q Super Disparo</span>
     </div>
     <div class="score-display" id="best-score-start"></div>
-    <button id="btn-play" class="btn-neon">? JUGAR</button>
-    <button id="btn-mute-start" class="btn-small">?? Sonido</button>
+    <button id="btn-play" class="btn-neon">▶ JUGAR</button>
+    <button id="btn-mute-start" class="btn-small">🔊 Sonido</button>
   </div>
 
   <!-- ========== CANVAS PRINCIPAL ========== -->
@@ -38,24 +38,24 @@
         <span id="tower-hp-text"></span>
       </div>
       <div class="hud-label" style="margin-top:8px;">JUGADOR</div>
-      <div id="shield-indicator" class="hidden">??? ESCUDO ACTIVO</div>
+      <div id="shield-indicator" class="hidden">🛡️ ESCUDO ACTIVO</div>
     </div>
     <div id="hud-center">
       <div id="wave-display">Oleada <span id="wave-num">1</span></div>
       <div id="score-display">Pts: <span id="score-val">0</span></div>
     </div>
     <div id="hud-right">
-      <div class="hud-label">?? <span id="coins-val">0</span></div>
+      <div class="hud-label">💰 <span id="coins-val">0</span></div>
       <div id="powerup-indicators"></div>
-      <button id="btn-mute-hud" class="btn-small" style="margin-top:6px;">??</button>
+      <button id="btn-mute-hud" class="btn-small" style="margin-top:6px;">🔊</button>
     </div>
   </div>
 
   <!-- ========== PANTALLA DE PAUSA ========== -->
   <div id="screen-pause" class="screen hidden">
     <h2 class="neon-text">PAUSA</h2>
-    <button id="btn-resume" class="btn-neon">? Continuar</button>
-    <button id="btn-mute-pause" class="btn-small" style="margin-top:12px;">?? Sonido</button>
+    <button id="btn-resume" class="btn-neon">▶ Continuar</button>
+    <button id="btn-mute-pause" class="btn-small" style="margin-top:12px;">🔊 Sonido</button>
   </div>
 
   <!-- ========== PANTALLA DE OLEADA ========== -->
@@ -66,10 +66,10 @@
 
   <!-- ========== TIENDA ENTRE OLEADAS ========== -->
   <div id="screen-shop" class="screen hidden">
-    <h2 class="neon-text">?? TIENDA</h2>
-    <p id="shop-coins-display">?? Monedas: <span id="shop-coins">0</span></p>
+    <h2 class="neon-text">🛒 TIENDA</h2>
+    <p id="shop-coins-display">💰 Monedas: <span id="shop-coins">0</span></p>
     <div id="shop-items"></div>
-    <button id="btn-next-wave" class="btn-neon">? Siguiente Oleada</button>
+    <button id="btn-next-wave" class="btn-neon">🔄 Siguiente Oleada</button>
   </div>
 
   <!-- ========== PANTALLA DE GAME OVER ========== -->
@@ -78,7 +78,7 @@
     <p id="go-wave">Oleada alcanzada: <span id="go-wave-num">0</span></p>
     <p id="go-score">Puntaje: <span id="go-score-val">0</span></p>
     <p id="go-best">Récord: <span id="go-best-val">0</span></p>
-    <button id="btn-retry" class="btn-neon">?? Reintentar</button>
+    <button id="btn-retry" class="btn-neon">🔄 Reintentar</button>
     <button id="btn-start-menu" class="btn-small" style="margin-top:12px;">Menú Principal</button>
   </div>
 
